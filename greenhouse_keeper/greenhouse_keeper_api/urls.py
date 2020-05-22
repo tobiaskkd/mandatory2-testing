@@ -7,5 +7,5 @@ router.register(r'measurement', views.MeasurementViewSet)
 '''
 urlpatterns = [
     path('', views.MeasurementList.as_view()),
-    #path('create', views.MeasurementCreate.as_view())
+    path('logic', views.MeasurementLogic.as_view())
 ]

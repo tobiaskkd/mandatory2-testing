@@ -4,6 +4,11 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from greenhouse_keeper_api.serializers import UserSerializer, GroupSerializer, MeasurementSerializer
 from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.views import APIView
+import json
+import measurement_helper
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -22,6 +27,23 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class MeasurementLogic(APIView):
+    def get(self, request, format=None):
+        measurements = Measurement.objects.all()
+        serializer = MeasurementSerializer(measurements, many=True)
+        print("Uhh der hentede du noget data")
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = MeasurementSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            # Processes the data
+            data = measurement_helper(serializer.data)
+            return Response(data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MeasurementList(generics.ListCreateAPIView):
