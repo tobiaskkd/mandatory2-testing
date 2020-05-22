@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'greenhouse_keeper_api'
 ]
 
 MIDDLEWARE = [
