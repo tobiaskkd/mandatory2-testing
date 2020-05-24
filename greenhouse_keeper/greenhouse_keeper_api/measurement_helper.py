@@ -14,42 +14,49 @@ class Measurement_helper():
         return self._temperature
 
     @temperature.setter
-    def temperature(self, data):
-        self._temperature = self.temperature_validator(data)
+    def temperature(self, temp):
+        if not isinstance(temp, (float, int)):
+            raise TypeError(f'value should be of type {float}, {type(temp)} given')
+        self._temperature = temp
 
     @property
     def humidity(self):
         return self._humidity
 
     @humidity.setter
-    def humidity(self, data):
-        self._humidity = self.humidity_validator(data)
+    def humidity(self, humi):
+        if not isinstance(humi, (float, int)):
+            raise TypeError(f'value should be of type {float}, {type(humi)} given')
+        self._humidity = humi
 
     @property
     def pressure(self):
         return self._pressure
 
     @pressure.setter
-    def pressure(self, data):
-        self._pressure = self.pressure_validator(data)
+    def pressure(self, pres):
+        if not isinstance(pres, (float, int)):
+            raise TypeError(f'value should be of type {float}, {type(pres)} given')
+        self._pressure = pres
 
     @property
     def message(self):
         return self._message
 
     @message.setter
-    def message(self):
-        self._message = message_generator()
+    def message(self, message):
+        if not isinstance(message, (str)):
+            raise TypeError(f'value should be of type {str}, {type(message)} given')
+        self._message = message
 
     def message_generator(self):
-        temp = f'Temperature {self.temperature}' if self.temperature else 'OK'
-        humi = f'Pressure {self.temperature}' if self.temperature else 'OK'
-        pres = f'Temperature {self.temperature}' if self.temperature else 'OK'
-        return '\n'.join((temp,humi,pres))
+        temp = f'Temperature {self.temperature}\n' if self.temperature else ''
+        humi = f'Pressure {self.humidity}\n' if self.humidity else ''
+        pres = f'Temperature {self.pressure}\n' if self.pressure else ''
+        message = ''.join((temp,humi,pres))
+        return message if len(message) > 0 else 'Everything is fine'
 
     def temperature_validator(self, data):
-        pprint(data)
-        print(type(data))
         temp = self.get_float_value_from_dict(data, 'temperature')
         result = self.get_measure_result(temp, max_limit=50, min_limit=25)
         return result
@@ -71,7 +78,7 @@ class Measurement_helper():
             raise TypeError(f'key should be of type {str}, {type(key)} given')
         float_val = data[key]
         if not isinstance(float_val, (float, int)):
-            raise TypeError(f'value should be of type {float()}, {type(float_val)} given')
+            raise TypeError(f'value should be of type {float}, {type(float_val)} given')
         return float_val
     
     def get_measure_result(self, value, max_limit=60, min_limit=20):
@@ -89,5 +96,5 @@ class Measurement_helper():
             result = False
         return result
 
-    def get_json_data(self):
-        return json.dumps(self.__dict__)
+    def get_data(self):
+        return self.__dict__

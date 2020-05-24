@@ -10,3 +10,4 @@ class Measurement(models.Model):
     pressure = models.FloatField()
     created_by = models.ForeignKey(
         User, related_name="created_by", on_delete=models.CASCADE, null=False)
+    message = models.CharField(max_length=200)

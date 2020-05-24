@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 import json
-from measurement_helper import Measurement_helper
+from .measurement_helper import Measurement_helper
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -34,19 +34,18 @@ class MeasurementLogic(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request, format=None):
-        measurements = Measurement.objects.all()
-        serializer = MeasurementSerializer(measurements, many=True)
-        print("Uhh der hentede du noget data")
-        return Response(serializer.data)
+        measurement = Measurement.objects.filter(created_by=request.user).latest('time')
+        serializer = MeasurementSerializer(measurement)
+        measurement_helper = Measurement_helper(serializer.data)
+        return Response(measurement_helper.get_data())
 
     def post(self, request, format=None):
         serializer = MeasurementSerializer(data=request.data)
         if serializer.is_valid():
             # Processes the data
-            measurement_helper = Measurement_helper(serializer.data)
-            serializer.save(message=measurement_helper.message)
-            measurement_helper.
-            return Response(measurement_helper.get_json_data()), status=status.HTTP_201_CREATED)
+            measurement_helper = Measurement_helper(serializer.validated_data)
+            serializer.save(created_by=request.user, message=measurement_helper.message)
+            return Response(measurement_helper.get_data(), status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -57,14 +56,3 @@ class MeasurementList(generics.ListCreateAPIView):
     queryset = Measurement.objects.all()
     serializer_class = MeasurementSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-
-'''
-class MeasurementCreate(generics.CreateAPIView):
-    """
-    API endpoint that allows measurements to be created.
-    """
-    queryset = Measurement.objects.create()
-    serializer_class = MeasurementSerializer
-    permission_classes = [permissions.IsAuthenticated]
-'''
