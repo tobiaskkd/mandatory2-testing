@@ -6,17 +6,81 @@ from datetime import datetime, time
 class Measurement_helper():
 
     def __init__(self, data):
-        self.temperature = self.temperature_validator(data)
-        self.humidity = self.humidity_validator(data)
-        self.pressure = self.pressure_validator(data)
-        self.message = self.message_generator(data)
-        self.is_night = self.is_night()
-        self.max_temperature = 30 if self.is_night else 20
-        self.min_temperature = 20 if self.is_night else 15
-        self.max_humidity = 90
-        self.min_humidity = 20
-        self.max_pressure = 1100
-        self.min_pressure = 900
+        self._is_night = self.is_night()
+        self._max_temperature = 30 if self.is_night else 20
+        self._min_temperature = 20 if self.is_night else 15
+        self._max_humidity = 90
+        self._min_humidity = 20
+        self._max_pressure = 1100
+        self._min_pressure = 900
+        self._data = self.validate_type(data, dict)
+        self._temperature = self.temperature_validator()
+        self._humidity = self.humidity_validator()
+        self._pressure = self.pressure_validator()
+        self._message = self.message_generator()
+
+
+    @property
+    def max_temperature(self):
+        return self._max_temperature
+
+    @max_temperature.setter
+    def max_temperature(self, temp):
+        self.validate_type(temp)
+        self._max_temperature = self.validate_min_max(temp, -20, 60)
+
+    @property
+    def min_temperature(self):
+        return self._min_temperature
+
+    @min_temperature.setter
+    def max_temperature(self, temp):
+        self.validate_type(temp)
+        self._min_temperature = self.validate_min_max(temp, -20, 60)
+
+    @property
+    def max_humidity(self):
+        return self._max_humidity
+
+    @max_humidity.setter
+    def max_humidity(self, humi):
+        self.validate_type(humi)
+        self._max_humidity = self.validate_min_max(humi, 0, 100)
+
+    @property
+    def min_humidity(self):
+        return self._min_humidity
+
+    @min_humidity.setter
+    def min_humidity(self, humi):
+        self.validate_type(humi)
+        self._min_humidity = self.validate_min_max(humi, 0, 100)
+
+    @property
+    def max_pressure(self):
+        return self._max_pressure
+
+    @max_pressure.setter
+    def max_pressure(self, pres):
+        self.validate_type(pres)
+        self._max_pressure = self.validate_min_max(pres, 0, 2000)
+
+    @property
+    def min_pressure(self):
+        return self._min_pressure
+
+    @min_pressure.setter
+    def min_pressure(self, pres):
+        self.validate_type(pres)
+        self._min_pressure = self.validate_min_max(pres, 0, 2000)
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._temperature = self.validate_type(data, dict)
 
     @property
     def temperature(self):
@@ -61,34 +125,25 @@ class Measurement_helper():
     def is_night(self, is_night):
         self._is_night = self.validate_type(is_night, bool)
 
-    @property
-    def max_temperature(self):
-        return self._max_temperature
-
-    @max_temperature.setter
-    def max_temperature(self, temp):
-        self.validate_type(temp)
-        self._max_temperature = self.validate_min_max(self, temp, -20, 60)
-
-    def message_generator(self, data):
-        sum = self.get_measurement_sum(data)
+    def message_generator(self):
+        sum = self.get_measurement_sum()
         message = self.generate_message(sum)
         return message
 
-    def temperature_validator(self, data):
-        temp = self.get_float_value_from_dict(data, 'temperature')
+    def temperature_validator(self):
+        temp = self.get_float_value_from_data_dict('temperature')
         return self.validate_min_max(temp, -20, 60)
 
-    def humidity_validator(self, data):
-        humi = self.get_float_value_from_dict(data, 'humidity')
+    def humidity_validator(self):
+        humi = self.get_float_value_from_data_dict('humidity')
         return self.validate_min_max(humi, 0, 100)
 
-    def pressure_validator(self, data):
-        pres = self.get_float_value_from_dict(data, 'pressure')
+    def pressure_validator(self):
+        pres = self.get_float_value_from_data_dict('pressure')
         return self.validate_min_max(pres, 0, 2000)
 
-    def get_float_value_from_dict(self, data, key):
-        data = self.validate_type(data, types=dict)
+    def get_float_value_from_data_dict(self, key):
+        data = self.validate_type(self.data, types=dict)
         key = self.validate_type(key, str)
         float_val = data[key]
         return self.validate_type(float_val)
@@ -105,17 +160,19 @@ class Measurement_helper():
         return result
 
     def get_data(self):
-        return self.__dict__
+        return {
+            'temperature': self.temperature,
+            'humidity': self.humidity,
+            'pressure': self.pressure,
+            'message': self.message
+        }
 
-    def get_measurement_sum(self, data):
+    def get_measurement_sum(self):
 
         high, low, ok = 3, 2, 1
         sum = 0
-        keys = ('temperature', 'humidity', 'pressure')
 
-        floats = {k: self.get_float_value_from_dict(
-            data, k) for k in keys}
-        temp, humi, pres = floats[keys[0]], floats[keys[1]], floats[keys[2]]
+        temp, humi, pres = self._temperature, self._humidity, self._pressure
 
         if temp >= self.max_temperature:
             sum += high * 5
@@ -177,3 +234,8 @@ class Measurement_helper():
             raise TypeError(
                 f'value should be of type {[t for t in types]}, {type(value)} given')
         return value
+
+if __name__ == "__main__":
+    mh = Measurement_helper({"temperature": 11, "humidity": 91, "pressure": 1101})
+
+    print(mh.get_data())
