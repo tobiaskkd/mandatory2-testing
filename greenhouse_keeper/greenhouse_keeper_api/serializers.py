@@ -18,4 +18,4 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 class MeasurementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Measurement
-        fields = ['time', 'temperature', 'humidity', 'pressure',]
+        fields = ['time', 'temperature', 'humidity', 'pressure']

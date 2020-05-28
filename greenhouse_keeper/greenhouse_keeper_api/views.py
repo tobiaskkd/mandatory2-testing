@@ -30,11 +30,12 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 
 class MeasurementLogic(APIView):
-    
+
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request, format=None):
-        measurement = Measurement.objects.filter(created_by=request.user).latest('time')
+        measurement = Measurement.objects.filter(
+            created_by=request.user).latest('time')
         serializer = MeasurementSerializer(measurement)
         measurement_helper = Measurement_helper(serializer.data)
         return Response(measurement_helper.get_data())
@@ -44,7 +45,8 @@ class MeasurementLogic(APIView):
         if serializer.is_valid():
             # Processes the data
             measurement_helper = Measurement_helper(serializer.validated_data)
-            serializer.save(created_by=request.user, message=measurement_helper.message)
+            serializer.save(created_by=request.user,
+                            message=measurement_helper.message)
             return Response(measurement_helper.get_data(), status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
