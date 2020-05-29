@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 import json
-from .measurement_helper import Measurement_helper
+from .measurement_helper import MeasurementHelper
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -37,17 +37,17 @@ class MeasurementLogic(APIView):
         measurement = Measurement.objects.filter(
             created_by=request.user).latest('time')
         serializer = MeasurementSerializer(measurement)
-        measurement_helper = Measurement_helper(serializer.data)
-        return Response(measurement_helper.get_data())
+        measurement_helper = MeasurementHelper(serializer.data)
+        return Response(measurement_helper.getData())
 
     def post(self, request, format=None):
         serializer = MeasurementSerializer(data=request.data)
         if serializer.is_valid():
             # Processes the data
-            measurement_helper = Measurement_helper(serializer.validated_data)
+            measurement_helper = MeasurementHelper(serializer.validated_data)
             serializer.save(created_by=request.user,
                             message=measurement_helper.message)
-            return Response(measurement_helper.get_data(), status=status.HTTP_201_CREATED)
+            return Response(measurement_helper.getData(), status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
