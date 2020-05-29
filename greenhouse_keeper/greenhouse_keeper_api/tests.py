@@ -9,6 +9,7 @@ from . import models
 from rest_framework.test import force_authenticate
 from rest_framework.test import APIRequestFactory
 from .measurement_helper import MeasurementHelper
+from .models import Measurement
 from freezegun import freeze_time
 
 
@@ -19,6 +20,9 @@ class MeasurementLogicTest(unittest.TestCase):
         self.user = models.User.objects.get(username='admin')
         # Get the view
         self.view = views.MeasurementLogic.as_view()
+        if not Measurement.objects.filter(created_by=self.user).latest('time'):
+            m = Measurement(temperature=25,humidity=80,pressure=1000,created_by=self.user,message='test')
+            m.save()
 
     def testPost(self):
         # Issue a POST request.
