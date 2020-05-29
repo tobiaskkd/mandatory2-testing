@@ -42,9 +42,10 @@ steps:
     python manage.py migrate
     echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@example.com', 'pass')" | python manage.py shell
   displayName: 'Setup Django'
-
+  
 - script: |
     pushd '$(projectRoot)'
+    echo "from greenhouse_keeper.greenhouse_keeper_api.models import Measurement; Measurement.objects.create(temperature=25, humidity=80, pressure=1000, created_by=1, message='')" | python manage.py shell
     python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --no-input
   condition: succeededOrFailed()
   displayName: 'Run tests'
