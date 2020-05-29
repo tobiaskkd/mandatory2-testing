@@ -8,21 +8,11 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
-strategy:
-  matrix:
-    Python35:
-      PYTHON_VERSION: '3.5'
-    Python36:
-      PYTHON_VERSION: '3.6'
-    Python37:
-      PYTHON_VERSION: '3.7'
-  maxParallel: 3
 
 steps:
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '$(PYTHON_VERSION)'
-    architecture: 'x64'
+     versionSpec: '3.7'
 
 - task: PythonScript@0
   displayName: 'Export project path'
@@ -41,10 +31,23 @@ steps:
       print('##vso[task.setvariable variable=projectRoot]{}'.format(project_location))
 
 - script: |
-    python -m pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip setuptools wheel
     pip install -r requirements.txt
     pip install unittest-xml-reporting
   displayName: 'Install prerequisites'
+
+- script: |
+    pushd '$(projectRoot)'
+    python manage.py makemigrations
+    python manage.py migrate
+    echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@example.com', 'pass')" | python manage.py shell
+  displayName: 'Setup Django'
+
+- script: |
+    pushd '$(projectRoot)'
+    python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --no-input
+  condition: succeededOrFailed()
+  displayName: 'Run tests'
 
 - script: |
     pushd '$(projectRoot)'
