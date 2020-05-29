@@ -173,7 +173,7 @@ class MeasurementHelperTest(unittest.TestCase):
                             #TODO: Der skal laves outputs der er passende til night data. Message og sum skal laves om.
                             ]
 
-        self.test_case_output_day = [{'temperature': 'High', 'humidity': 'High',
+        self.test_case_output_night = [{'temperature': 'High', 'humidity': 'High',
                             'pressure': 'High', 'sum': 21, 'message': 'Open window, water the plants.'},
                             {'temperature': 'High', 'humidity': 'High',
                             'pressure': 'Low', 'sum': 22, 'message': 'Open window, water the plants.'},
@@ -234,7 +234,8 @@ class MeasurementHelperTest(unittest.TestCase):
         """ Test constructor and getters for day and night test caes data """
         # Combining day and night testcase data
         test_case_input = self.test_case_data_day + self.test_case_data_night
-        for index, (testcase, testoutput) in enumerate(zip(test_case_input, self.test_case_output_day),1):
+        test_case_output =  self.test_case_output_day + self.test_case_output_night
+        for index, (testcase, testoutput) in enumerate(zip(test_case_input, test_case_output),1):
             # Every loop the MeasurementHelper() object will be initialized with a new testcase.
             helper = MeasurementHelper(testcase)
             # get_data() is expected to output a string matching self.test_case_output_day.
@@ -262,14 +263,11 @@ class MeasurementHelperTest(unittest.TestCase):
             ]
         
         for index, (bad_in, good_in, good_out) in enumerate(zip(bad_input, good_input, good_output),1):
-            #self.assertRaises(self.measurement_helper.validateType(data), output)
+
             with self.assertRaises(TypeError):
                 self.measurement_helper.validateType(bad_in)
             self.assertEquals(self.measurement_helper.validateType(good_in), good_out)
             print(index, good_out, '\n')
-
-
-
     
     def testValidateMinMax(self):
         """Test if the boundaries min & max is set proberly. If a VALUE ERROR is raised if the input is below min_value or above max_value
@@ -278,7 +276,7 @@ class MeasurementHelperTest(unittest.TestCase):
         bad_input = [-21, 61]
         good_input = [-20, -19, 0, 1, 59, 60]
 
-        good_output = [-20, -19, 0, 1, 59, 60]
+        expected = [-20, -19, 0, 1, 59, 60]
 
         for bad_in in bad_input:
             with self.assertRaises(ValueError):
@@ -286,32 +284,44 @@ class MeasurementHelperTest(unittest.TestCase):
             print(bad_in, 'ValueError\n')
 
 
-        for index, (good_in, good_out) in enumerate(zip(good_input, good_output),1):
-            self.assertEquals(self.measurement_helper.validateMinMax(good_in, -20, 60), good_out)
+        for index, (good_in, expected_out) in enumerate(zip(good_input, expected_output),1):
+            self.assertEquals(self.measurement_helper.validateMinMax(good_in, -20, 60), expected_out)
             print(index, good_in, '\n')
 
-
-
-            
-    def testMessageGenerator(self):
-        """ Test the output of messageGenerator """
-        pass
-
     def testGetFloatValueFromDataDict(self):
-        pass
+        """Test that a FLOAT or INT value is returned when the correct key is provided"""        
+        
+        good_input = [
+            'temperature',
+            'humidity',
+            'pressure',
+            ]
+            
+        for index, good_in in enumerate(good_input,1):
+            self.assertIsInstance(self.measurement_helper.getFloatValueFromDataDict(good_in), (float, int))
 
     def testGetMeasureResult(self):
-        pass
+        """ Test for function returns correct results for diffrent value combinations. Also test for expected value error if wrong value is parsed. """
+        bad_inputs = [10.1], ["string"], [None]
+        good_inputs = [[28, 25, 10],[25, 40, 20], [5, 10, 100], [0, 0, 0], [-10, 300, -900]]
+        good_expected = ["High", "Ok", "Low", "Ok", "Ok", "Ok"]
+        # Test expected to succeed.
+        for index, expected_output in enumerate(good_expected):
+            self.assertEqual(self.measurement_helper.getMeasureResult(good_inputs[index][0],good_inputs[index][1], good_inputs[index][2]), expected_output)
+
+        # Test expected to raise error.
+        for bad_input in bad_inputs:
+            with self.assertRaises(ValueError):
+                self.measurement_helper.getMeasureResult(bad_input)
+
 
     def testGetMeasurementSum(self):
-        pass
+        """ Test that salatmayonaise """
+        
 
     def testIsNight(self):
         pass
-
-
         
-
 
 '''
 class TestPasswordGenerator(unittest.TestCase):
