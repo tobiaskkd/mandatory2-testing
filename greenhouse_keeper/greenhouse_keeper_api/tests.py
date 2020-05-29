@@ -20,7 +20,7 @@ class MeasurementLogicTest(unittest.TestCase):
         self.user = models.User.objects.get(username='admin')
         # Get the view
         self.view = views.MeasurementLogic.as_view()
-        if not Measurement.objects.filter(created_by=self.user).latest('time'):
+        if not Measurement.objects.filter(created_by=self.user).exists():
             m = Measurement(temperature=25,humidity=80,pressure=1000,created_by=self.user,message='test')
             m.save()
 
