@@ -55,6 +55,6 @@ class MeasurementList(generics.ListCreateAPIView):
     """
     API endpoint that returns a list of all measurements.
     """
-    queryset = Measurement.objects.all()
+    queryset = Measurement.objects.all().order_by('time')
     serializer_class = MeasurementSerializer
     permission_classes = [permissions.IsAuthenticated]

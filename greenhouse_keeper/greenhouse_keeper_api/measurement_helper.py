@@ -5,6 +5,7 @@ from datetime import datetime, time
 
 class MeasurementHelper():
     """ MeasurementHelper() accepts data of type dictionary. Must contain temperature, humidity and pressure. """
+
     def __init__(self, data):
         self._is_night = self.isNight()
         self._max_temperature = 20 if self.is_night else 30
@@ -18,7 +19,6 @@ class MeasurementHelper():
         self._humidity = self.humidityValidator()
         self._pressure = self.pressureValidator()
         self._message = self.messageGenerator()
-
 
     @property
     def max_temperature(self):
@@ -157,7 +157,7 @@ class MeasurementHelper():
         """ Validates type of all parsed values. Returns a string as result of the parsed 'value's size. """
         for val in (value, max_limit, min_limit):
             self.validateType(val)
-        
+
         if value > max_limit:
             result = 'High'
         elif value < min_limit:
@@ -211,10 +211,10 @@ class MeasurementHelper():
         now_time = now.time()
         morning = time(6, 00)
         evening = time(18, 00)
-        
+
         if now_time > evening or now_time < morning:
             return True
-        
+
         return False
 
     def generateMessage(self, sum):

@@ -3,7 +3,6 @@ import unittest
 from unittest import mock
 import base64
 from django.test import Client
-from pprint import pprint
 from . import views
 from . import models
 from rest_framework.test import force_authenticate
@@ -11,6 +10,7 @@ from rest_framework.test import APIRequestFactory
 from .measurement_helper import MeasurementHelper
 from .models import Measurement
 from freezegun import freeze_time
+from pprint import pprint
 
 
 class MeasurementLogicTest(unittest.TestCase):
@@ -20,8 +20,10 @@ class MeasurementLogicTest(unittest.TestCase):
         self.user = models.User.objects.get(username='admin')
         # Get the view
         self.view = views.MeasurementLogic.as_view()
+        # Insert a record in the db for testing purposes
         if not Measurement.objects.filter(created_by=self.user).exists():
-            m = Measurement(temperature=25,humidity=80,pressure=1000,created_by=self.user,message='test')
+            m = Measurement(temperature=25, humidity=80,
+                            pressure=1000, created_by=self.user, message='test')
             m.save()
 
     def testPost(self):
@@ -32,14 +34,19 @@ class MeasurementLogicTest(unittest.TestCase):
             '/measurements/',
             data={
                 "temperature": 20,
-                "humidity": 20,
-                "pressure": 20
+                "humidity": 60,
+                "pressure": 1000
             })
         force_authenticate(request, user=self.user)
         response = self.view(request)
-
-        # Check that the response is 201 OK.
+        
+        # Check that the response is 201 OK and data is correct.
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data, {'humidity': 'Ok',
+                                         'message': 'Close window, no need to water.',
+                                         'pressure': 'Ok',
+                                         'sum': 7,
+                                         'temperature': 'Ok'})
 
     def testGet(self):
         # Issue a GET request.
@@ -58,7 +65,8 @@ class MeasurementHelperTest(unittest.TestCase):
     def setUp(self):
         """ Creates an instance of MeasurementHelper and sets up test cases. """
         # Instantiate MeasurementHelper class
-        self.measurement_helper = MeasurementHelper({"temperature": 31, "humidity": 91, "pressure": 1101})
+        self.measurement_helper = MeasurementHelper(
+            {"temperature": 31, "humidity": 91, "pressure": 1101})
         # Create instance of measurementHelper.py class
         # 27 test cases for day data that is expected to output all possible outcomes.
         self.test_case_data_day = [
@@ -121,159 +129,346 @@ class MeasurementHelperTest(unittest.TestCase):
             {"temperature": 17, "humidity": 55, "pressure": 899},
             {"temperature": 17, "humidity": 55, "pressure": 1000}
         ]
-        # The 54 diffrent outcomes 
-        self.test_case_output_day = [{'temperature': 'High', 'humidity': 'High',
-                            'pressure': 'High', 'sum': 21, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'High',
-                            'pressure': 'Low', 'sum': 22, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'High',
-                            'pressure': 'Ok', 'sum': 23, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'Low',
-                            'pressure': 'High', 'sum': 18, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Low',
-                            'pressure': 'Low', 'sum': 19, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Low',
-                            'pressure': 'Ok', 'sum': 20, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'Ok',
-                            'pressure': 'High', 'sum': 15, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Ok',
-                            'pressure': 'Low', 'sum': 16, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Ok',
-                            'pressure': 'Ok', 'sum': 17, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'High',
-                            'pressure': 'High', 'sum': 11, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'High',
-                            'pressure': 'Low', 'sum': 12, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'High',
-                            'pressure': 'Ok', 'sum': 13, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'Low',
-                            'pressure': 'High', 'sum': 8, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Low',
-                            'pressure': 'Low', 'sum': 9, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Low',
-                            'pressure': 'Ok', 'sum': 10, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'Ok',
-                            'pressure': 'High', 'sum': 5, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Ok',
-                            'pressure': 'Low', 'sum': 6, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Ok',
-                            'pressure': 'Ok', 'sum': 7, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'High',
-                            'pressure': 'High', 'sum': 16, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'High',
-                            'pressure': 'Low', 'sum': 17, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'High',
-                            'pressure': 'Ok', 'sum': 18, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'Low',
-                            'pressure': 'High', 'sum': 13, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Low',
-                            'pressure': 'Low', 'sum': 14, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Low',
-                            'pressure': 'Ok', 'sum': 15, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'Ok',
-                            'pressure': 'High', 'sum': 10, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Ok',
-                            'pressure': 'Low', 'sum': 11, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Ok',
-                            'pressure': 'Ok', 'sum': 12, 'message': 'Close window, water the plants.'},
-                            ]
-                            #TODO: Ret alle disse til at være korrekte.
-        self.test_case_output_night = [{'temperature': 'High', 'humidity': 'High',
-                            'pressure': 'High', 'sum': 11, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'High',
-                            'pressure': 'Low', 'sum': 12, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'High',
-                            'pressure': 'Ok', 'sum': 13, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'Low',
-                            'pressure': 'High', 'sum': 8, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Low',
-                            'pressure': 'Low', 'sum': 9, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Low',
-                            'pressure': 'Ok', 'sum': 10, 'message': 'Open window, water the plants.'},
-                            {'temperature': 'High', 'humidity': 'Ok',
-                            'pressure': 'High', 'sum': 5, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Ok',
-                            'pressure': 'Low', 'sum': 6, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'High', 'humidity': 'Ok',
-                            'pressure': 'Ok', 'sum': 7, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'High',
-                            'pressure': 'High', 'sum': 16, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'High',
-                            'pressure': 'Low', 'sum': 17, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'High',
-                            'pressure': 'Ok', 'sum': 18, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'Low',
-                            'pressure': 'High', 'sum': 13, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Low',
-                            'pressure': 'Low', 'sum': 14, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Low',
-                            'pressure': 'Ok', 'sum': 15, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Ok', 'humidity': 'Ok',
-                            'pressure': 'High', 'sum': 10, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Ok',
-                            'pressure': 'Low', 'sum': 11, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Ok', 'humidity': 'Ok',
-                            'pressure': 'Ok', 'sum': 12, 'message': 'Close window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'High',
-                            'pressure': 'High', 'sum': 16, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'High',
-                            'pressure': 'Low', 'sum': 17, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'High',
-                            'pressure': 'Ok', 'sum': 18, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'Low',
-                            'pressure': 'High', 'sum': 13, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Low',
-                            'pressure': 'Low', 'sum': 14, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Low',
-                            'pressure': 'Ok', 'sum': 15, 'message': 'Open window, no need to water.'},
-                            {'temperature': 'Low', 'humidity': 'Ok',
-                            'pressure': 'High', 'sum': 10, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Ok',
-                            'pressure': 'Low', 'sum': 11, 'message': 'Close window, water the plants.'},
-                            {'temperature': 'Low', 'humidity': 'Ok',
-                            'pressure': 'Ok', 'sum': 12, 'message': 'Close window, water the plants.'},
-                            ]
-    '''
-    #TODO: This test fails. We need to make sure the getData() is equal to 'testoutput'
+
+        # The 54 diffrent outcomes
+        self.test_case_output_day = [{'temperature': 'High',
+                                      'humidity': 'High',
+                                      'pressure': 'High',
+                                      'sum': 21,
+                                      'message': 'Open window, water the plants.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'High',
+                                      'pressure': 'Low',
+                                      'sum': 22,
+                                      'message': 'Open window, water the plants.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'High',
+                                      'pressure': 'Ok',
+                                      'sum': 23,
+                                      'message': 'Open window, water the plants.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'Low',
+                                      'pressure': 'High',
+                                      'sum': 18,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'Low',
+                                      'pressure': 'Low',
+                                      'sum': 19,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'Low',
+                                      'pressure': 'Ok',
+                                      'sum': 20,
+                                      'message': 'Open window, water the plants.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'Ok',
+                                      'pressure': 'High',
+                                      'sum': 15,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'Ok',
+                                      'pressure': 'Low',
+                                      'sum': 16,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'High',
+                                      'humidity': 'Ok',
+                                      'pressure': 'Ok',
+                                      'sum': 17,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'High',
+                                      'pressure': 'High',
+                                      'sum': 11,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'High',
+                                      'pressure': 'Low',
+                                      'sum': 12,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'High',
+                                      'pressure': 'Ok',
+                                      'sum': 13,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'Low',
+                                      'pressure': 'High',
+                                      'sum': 8,
+                                      'message': 'Close window, no need to water.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'Low',
+                                      'pressure': 'Low',
+                                      'sum': 9,
+                                      'message': 'Close window, no need to water.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'Low',
+                                      'pressure': 'Ok',
+                                      'sum': 10,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'Ok',
+                                      'pressure': 'High',
+                                      'sum': 5,
+                                      'message': 'Close window, no need to water.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'Ok',
+                                      'pressure': 'Low',
+                                      'sum': 6,
+                                      'message': 'Close window, no need to water.'
+                                      },
+                                     {'temperature': 'Ok',
+                                      'humidity': 'Ok',
+                                      'pressure': 'Ok',
+                                      'sum': 7,
+                                      'message': 'Close window, no need to water.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'High',
+                                      'pressure': 'High',
+                                      'sum': 16,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'High',
+                                      'pressure': 'Low',
+                                      'sum': 17,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'High',
+                                      'pressure': 'Ok',
+                                      'sum': 18,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'Low',
+                                      'pressure': 'High',
+                                      'sum': 13,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'Low',
+                                      'pressure': 'Low',
+                                      'sum': 14,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'Low',
+                                      'pressure': 'Ok',
+                                      'sum': 15,
+                                      'message': 'Open window, no need to water.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'Ok',
+                                      'pressure': 'High',
+                                      'sum': 10,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'Ok',
+                                      'pressure': 'Low',
+                                      'sum': 11,
+                                      'message': 'Close window, water the plants.'
+                                      },
+                                     {'temperature': 'Low',
+                                      'humidity': 'Ok',
+                                      'pressure': 'Ok',
+                                      'sum': 12,
+                                      'message': 'Close window, water the plants.'},
+                                     ]
+
+        self.test_case_output_night = [{'humidity': 'High',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'High',
+                                        'sum': 11,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'High',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Low',
+                                        'sum': 12,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'High',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Ok',
+                                        'sum': 13,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, no need to water.',
+                                        'pressure': 'High',
+                                        'sum': 8,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, no need to water.',
+                                        'pressure': 'Low',
+                                        'sum': 9,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Ok',
+                                        'sum': 10,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, no need to water.',
+                                        'pressure': 'High',
+                                        'sum': 5,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, no need to water.',
+                                        'pressure': 'Low',
+                                        'sum': 6,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, no need to water.',
+                                        'pressure': 'Ok',
+                                        'sum': 7,
+                                        'temperature': 'Ok'},
+                                       {'humidity': 'High',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'High',
+                                        'sum': 16,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'High',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'Low',
+                                        'sum': 17,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'High',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'Ok',
+                                        'sum': 18,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'High',
+                                        'sum': 13,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Low',
+                                        'sum': 14,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Low',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'Ok',
+                                        'sum': 15,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'High',
+                                        'sum': 10,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Low',
+                                        'sum': 11,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Ok',
+                                        'sum': 12,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'High',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'High',
+                                        'sum': 16,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'High',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'Low',
+                                        'sum': 17,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'High',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'Ok',
+                                        'sum': 18,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'High',
+                                        'sum': 13,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Low',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Low',
+                                        'sum': 14,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Low',
+                                        'message': 'Open window, no need to water.',
+                                        'pressure': 'Ok',
+                                        'sum': 15,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'High',
+                                        'sum': 10,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Low',
+                                        'sum': 11,
+                                        'temperature': 'Low'},
+                                       {'humidity': 'Ok',
+                                        'message': 'Close window, water the plants.',
+                                        'pressure': 'Ok',
+                                        'sum': 12,
+                                        'temperature': 'Low'},
+                                       ]
+
     def testConstructAndGetters(self):
         """ Test constructor and getters for day and night test caes data """
         # Combining day and night testcase data
         test_case_input = self.test_case_data_day + self.test_case_data_night
-        test_case_output =  self.test_case_output_day + self.test_case_output_night
-        for index, (testcase, testoutput) in enumerate(zip(test_case_input, test_case_output),1):
+        test_case_output = self.test_case_output_day + self.test_case_output_night
+
+        for index, (testcase, testoutput) in enumerate(zip(test_case_input, test_case_output), 1):
             # Every loop the MeasurementHelper() object will be initialized with a new testcase.
             helper = MeasurementHelper(testcase)
             # get_data() is expected to output a string matching self.test_case_output_day.
             self.assertEqual(helper.getData(), testoutput)
 
-            print(index,helper.getData(), '\n')
             # all object getters are supposed to return a value matching self.test_case_output_day.
-            self.assertEquals(helper.temperature, testoutput.get('temperature'))
-            self.assertEquals(helper.pressure, testoutput.get('pressure'))
-            self.assertEquals(helper.humidity, testoutput.get('humidity'))
+            self.assertEqual(helper.temperature,
+                             testoutput.get('temperature'))
+            self.assertEqual(helper.pressure, testoutput.get('pressure'))
+            self.assertEqual(helper.humidity, testoutput.get('humidity'))
 
-            # test is_night() ?
-    '''
     def testValidateType(self):
-        """Test if the input given to the function is of type INT or FLOAT then returns "value" else return a TYPE ERROR"""        
-        
-        bad_input = ["the is a string", "", {1,2,3}, "@!€%"]
+        """Test if the input given to the function is of type INT or FLOAT then returns "value" else return a TYPE ERROR"""
+
+        bad_input = ["the is a string", "", {1, 2, 3}, "@!€%"]
         good_input = [12, -20, 13.11, 1000]
 
         good_output = [
             12,
             -20,
             13.11,
-            1000, 
-            ]
-        
-        for index, (bad_in, good_in, good_out) in enumerate(zip(bad_input, good_input, good_output),1):
+            1000,
+        ]
+
+        for index, (bad_in, good_in, good_out) in enumerate(zip(bad_input, good_input, good_output), 1):
 
             with self.assertRaises(TypeError):
                 self.measurement_helper.validateType(bad_in)
-            self.assertEquals(self.measurement_helper.validateType(good_in), good_out)
-            print(index, good_out, '\n')
-    
+            self.assertEqual(
+                self.measurement_helper.validateType(good_in), good_out)
+
     def testValidateMinMax(self):
         """Test if the boundaries min & max is set proberly. If a VALUE ERROR is raised if the input is below min_value or above max_value
            In this test, the values from Temperature boundary analysis is used. No need for testing humidity and pressure values since the output will be the same"""
@@ -287,50 +482,50 @@ class MeasurementHelperTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.measurement_helper.validateMinMax(bad_in, -20, 60)
             print(bad_in, 'ValueError\n')
-
-
-        for index, (good_in, expected_out) in enumerate(zip(good_input, expected_output),1):
-            self.assertEquals(self.measurement_helper.validateMinMax(good_in, -20, 60), expected_out)
-            print(index, good_in, '\n')
-    
+        for index, (good_in, expected_out) in enumerate(zip(good_input, expected_output), 1):
+            self.assertEqual(self.measurement_helper.validateMinMax(
+                good_in, -20, 60), expected_out)
 
     def testGetFloatValueFromDataDict(self):
-        """Test that a FLOAT or INT value is returned when the correct key is provided"""        
-        
+        """Test that a FLOAT or INT value is returned when the correct key is provided"""
+
         good_input = [
             'temperature',
             'humidity',
             'pressure',
-            ]
-            
-        for index, good_in in enumerate(good_input,1):
-            self.assertIsInstance(self.measurement_helper.getFloatValueFromDataDict(good_in), (float, int))
+        ]
+
+        for index, good_in in enumerate(good_input, 1):
+            self.assertIsInstance(
+                self.measurement_helper.getFloatValueFromDataDict(good_in), (float, int))
 
     def testGetMeasureResult(self):
         """ Test for function returns correct results for diffrent value combinations. Also test for expected value error if wrong value is parsed. """
-        bad_inputs = ["string", None, {1,3,4}, "@±≠¶™∞£§“§", TypeError]
-        good_inputs = [[28, 25, 10],[25, 40, 20], [5, 10, 100], [0, 0, 0], [-10, 300, -900], [10.1, 10.2,9.9]]
-        good_expected = ["High", "Ok", "Low", "Ok", "Ok"]
+        bad_inputs = ["string", None, {1, 3, 4}, "@±≠¶™∞£§“§", TypeError]
+        good_inputs = [[28, 25, 10], [25, 40, 20], [5, 10, 100],
+                       [0, 0, 0], [-10, 300, -900], [10.1, 10.2, 9.9], [10, 5, 1]]
+        good_expected = ["High", "Ok", "Low", "Ok", "Ok", "Ok", "High"]
+
         # Test expected to succeed.
         for index, expected_output in enumerate(good_expected):
-            self.assertEqual(self.measurement_helper.getMeasureResult(good_inputs[index][0],good_inputs[index][1], good_inputs[index][2]), expected_output)
+            self.assertEqual(self.measurement_helper.getMeasureResult(
+                good_inputs[index][0], good_inputs[index][1], good_inputs[index][2]), expected_output)
 
         # Test expected to raise error.
         for bad_input in bad_inputs:
             with self.assertRaises(TypeError):
                 self.measurement_helper.getMeasureResult(bad_input)
 
-
     def testGetMeasurementSum(self):
         """ Test every combination and expect to get correct sum caluclated """
-         # Combining day and night testcase data
+        # Combining day and night testcase data
         test_case_input = self.test_case_data_day + self.test_case_data_night
-        test_case_output =  self.test_case_output_day + self.test_case_output_night
-        for index, (testcase, testoutput) in enumerate(zip(test_case_input, test_case_output),1):
+        test_case_output = self.test_case_output_day + self.test_case_output_night
+        for index, (testcase, testoutput) in enumerate(zip(test_case_input, test_case_output), 1):
             # Every loop the MeasurementHelper() object will be initialized with a new testcase.
             helper = MeasurementHelper(testcase)
             # get_data() is expected to output a string matching self.test_case_output_day.
-            self.assertEqual(helper.getMeasurementSum(), testoutput.get('sum'))        
+            self.assertEqual(helper.getMeasurementSum(), testoutput.get('sum'))
 
     @freeze_time("16:00:00")
     def testIsNight(self):
@@ -341,157 +536,3 @@ class MeasurementHelperTest(unittest.TestCase):
     def testIsDay(self):
         """ Test that True is returned at 01:00 """
         self.assertTrue(self.measurement_helper.isNight())
-        
-
-'''
-class TestPasswordGenerator(unittest.TestCase):
-
-    # Instance of PasswordGenerator class with default values
-    # length=10, characters=True, numbers=True, specialChar=True, uppercase=True, lowercase=True
-    passwordGen = PasswordGenerator()
-
-    def test_constructor(self):
-        self.assertIsInstance(self.passwordGen, PasswordGenerator)
-        # TODO: More tests here?
-
-    def test_length(self):
-
-        # Test cases for expected exceptions.
-        failTestCases = [-10, 0, 9, 31, "string", 0.1, None]
-        for testcase in failTestCases:
-            print("Expect exception with value:", testcase)
-            with self.assertRaises(Exception):
-                self.passwordGen.length = testcase
-
-        # Test cases for expected success.
-        successTestCases = [10, 15, 30]
-        for testcase in successTestCases:
-            print("Expect success with value:", testcase)
-            self.passwordGen.length = testcase
-            self.assertEqual(testcase, self.passwordGen.length)
-            not self.assertRaises(Exception)
-
-    def test_characters(self):
-
-        # Test cases for expected exceptions.
-        failTestCases = [1, "string", 0.1, None]
-        for testcase in failTestCases:
-            print("Expect exception with value:", testcase)
-            with self.assertRaises(Exception):
-                self.passwordGen.characters = testcase
-                self.passwordGen.numbers = testcase
-                self.passwordGen.specialChar = testcase
-                self.passwordGen.uppercase = testcase
-                self.passwordGen.lowercase = testcase
-
-        # Test cases for expected success.
-        successTestCases = [True, False]
-        for testcase in successTestCases:
-            print("Expect success with value:", testcase)
-            self.passwordGen.characters = testcase
-            self.assertEqual(testcase, self.passwordGen.characters)
-            not self.assertRaises(Exception)
-
-            self.passwordGen.numbers = testcase
-            self.assertEqual(testcase, self.passwordGen.numbers)
-            not self.assertRaises(Exception)
-
-            self.passwordGen.specialChar = testcase
-            self.assertEqual(testcase, self.passwordGen.specialChar)
-            not self.assertRaises(Exception)
-
-            self.passwordGen.uppercase = testcase
-            self.assertEqual(testcase, self.passwordGen.uppercase)
-            not self.assertRaises(Exception)
-
-            self.passwordGen.lowercase = testcase
-            self.assertEqual(testcase, self.passwordGen.lowercase)
-            not self.assertRaises(Exception)
-
-    def test_generatePassword(self):
-
-        # Test cases
-        testCases = [
-            {
-                "length": 10,
-                "characters": True,
-                "numbers": True,
-                "specialChar": True,
-                "uppercase": True,
-                "lowercase": True
-            },
-            {
-                "length": 30,
-                "characters": False,
-                "numbers": True,
-                "specialChar": False,
-                "uppercase": False,
-                "lowercase": False
-            },
-            {
-                "length": 15,
-                "characters": False,
-                "numbers": True,
-                "specialChar": False,
-                "uppercase": True,
-                "lowercase": False
-            },
-            {
-                "length": 15,
-                "characters": True,
-                "numbers": True,
-                "specialChar": True,
-                "uppercase": True,
-                "lowercase": True
-            }
-        ]
-        for testCase in testCases:
-            self.passwordGen = PasswordGenerator(
-                testCase['length'],
-                testCase['characters'],
-                testCase['numbers'],
-                testCase['specialChar'],
-                testCase['uppercase'],
-                testCase['lowercase']
-            )
-            self.assertTrue(type(self.passwordGen.generatePassword()) is str)
-            passwordToTest = self.passwordGen.generatePassword()
-            print("Testcase: ", testCase, "Testing password: ", passwordToTest)
-            # Assert that passwordToTest is alphabethical if testCase numbers is not True and vice versa.
-            self.assertEqual(
-                passwordToTest.isalpha(), not testCase['numbers'])
-            # Assert that passwordToTest is lowercase if testCase uppercase is not True and testCase lowercase is True and vice versa.
-            self.assertEqual(
-                passwordToTest.islower(), not testCase['uppercase'] and testCase['lowercase'])
-            # Assert that the final length of the password is the same as the length provided
-            self.assertEqual(
-                len(passwordToTest), testCase['length'])
-        # Assert that setting all settings to False will throw an error
-        print('Expect Exception with all settings set to False:')
-        with self.assertRaises(Exception):
-            self.passwordGen = PasswordGenerator(
-                20,
-                False,
-                False,
-                False,
-                False,
-                False
-            )
-            self.passwordGen.generatePassword()
-        # Assert that setting all settings to False will throw an error
-        print('Expect no Exception with all settings set to True:')
-        self.passwordGen = PasswordGenerator(
-            20,
-            True,
-            True,
-            True,
-            True,
-            True
-        )
-        self.passwordGen.generatePassword()
-        not self.assertRaises(Exception)
-
-
-if __name__ == "__main__":
-    unittest.main()
-'''
