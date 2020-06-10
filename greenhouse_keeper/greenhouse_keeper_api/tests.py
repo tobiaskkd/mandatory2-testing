@@ -430,7 +430,7 @@ class MeasurementHelperTest(unittest.TestCase):
                                         'sum': 12,
                                         'temperature': 'Low'},
                                        ]
-
+    @freeze_time("16:00:00")
     def testConstructAndGetters(self):
         """ Test constructor and getters for day and night test caes data """
         # Combining day and night testcase data
@@ -515,7 +515,7 @@ class MeasurementHelperTest(unittest.TestCase):
         for bad_input in bad_inputs:
             with self.assertRaises(TypeError):
                 self.measurement_helper.getMeasureResult(bad_input)
-
+    @freeze_time("16:00:00")
     def testGetMeasurementSum(self):
         """ Test every combination and expect to get correct sum caluclated """
         # Combining day and night testcase data
