@@ -536,3 +536,6 @@ class MeasurementHelperTest(unittest.TestCase):
     def testIsDay(self):
         """ Test that True is returned at 01:00 """
         self.assertTrue(self.measurement_helper.isNight())
+
+
+
